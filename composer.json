@@ -1,0 +1,23 @@
+{
+  "name": "bashkarev/ssh",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "bashkarev",
+      "email": "dmitry@bashkarev.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Bashkarev\\Ssh\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Bashkarev\\Ssh\\Tests\\": "tests/"
+    }
+  }
+}
