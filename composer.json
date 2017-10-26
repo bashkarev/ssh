@@ -19,5 +19,8 @@
     "psr-4": {
       "Bashkarev\\Ssh\\Tests\\": "tests/"
     }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.7"
   }
 }
