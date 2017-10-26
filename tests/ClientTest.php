@@ -68,9 +68,6 @@ class ClientTest extends TestCase
         (new Client())->setIdentityFile('none');
     }
 
-    /**
-     * @var null|string
-     */
     public function testDefaultArguments()
     {
         $client = new Client();
