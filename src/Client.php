@@ -7,6 +7,8 @@
 
 namespace Bashkarev\Ssh;
 
+use Bashkarev\Ssh\Exception\InvalidArgumentException;
+
 /**
  * @author Dmitry Bashkarev <dmitry@bashkarev.com>
  */
@@ -15,23 +17,23 @@ class Client
     /**
      * @var string
      */
-    private $defaultArguments = '-o StrictHostKeyChecking=no';
-    /**
-     * @var string
-     */
     private $hostName;
     /**
-     * @var string
+     * @var null|string
      */
     private $user;
     /**
      * @var int
      */
-    private $port;
+    private $port = 22;
     /**
-     * @var string|null
+     * @var null|string
      */
     private $identityFile;
+    /**
+     * @var null|string
+     */
+    private $defaultArguments = '-o StrictHostKeyChecking=no';
     /**
      * @var bool
      */
@@ -41,7 +43,9 @@ class Client
      */
     private $pipes;
 
-
+    /**
+     * @return string ssh build command
+     */
     public function __toString()
     {
         $ssh = 'ssh -tt';
@@ -84,6 +88,14 @@ class Client
     }
 
     /**
+     * @return string
+     */
+    public function getHostName()
+    {
+        return $this->hostName;
+    }
+
+    /**
      * @param string $user
      * @return $this
      */
@@ -95,24 +107,46 @@ class Client
     }
 
     /**
-     * @param int $port
+     * @return null|string
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param int $port According to RFC 793, range is 0 - 65535.
      * @return $this
+     * @throws InvalidArgumentException
      */
     public function setPort($port)
     {
+        $port = (int)$port;
+        if ($port < 0 || $port > 65535) {
+            throw new InvalidArgumentException('The port value must be a real positive integer, in the range 0-65535.');
+        }
         $this->port = $port;
 
         return $this;
     }
 
     /**
-     * @param string $file
+     * @return int According to RFC 793, range is 0 - 65535.
+     */
+    public function getPort()
+    {
+        return $this->port;
+    }
+
+    /**
+     * @param string $file file path
      * @return $this
+     * @throws InvalidArgumentException
      */
     public function setIdentityFile($file)
     {
         if (!file_exists($file)) {
-            throw new \InvalidArgumentException("Identity file `{$file}` not found");
+            throw new InvalidArgumentException("Identity file `{$file}` not found");
         }
         $this->identityFile = $file;
 
@@ -120,7 +154,15 @@ class Client
     }
 
     /**
-     * @param string|null $arguments
+     * @return null|string
+     */
+    public function getIdentityFile()
+    {
+        return $this->identityFile;
+    }
+
+    /**
+     * @param null|string $arguments
      * @return $this
      */
     public function setDefaultArguments($arguments)
@@ -135,6 +177,14 @@ class Client
     }
 
     /**
+     * @return null|string
+     */
+    public function getDefaultArguments()
+    {
+        return $this->defaultArguments;
+    }
+
+    /**
      * @param bool $forwardAgent
      * @return $this
      */
@@ -143,6 +193,14 @@ class Client
         $this->forwardAgent = (bool)$forwardAgent;
 
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isForwardAgent()
+    {
+        return $this->forwardAgent;
     }
 
     /**
