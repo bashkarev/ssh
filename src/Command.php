@@ -155,7 +155,7 @@ class Command
             throw new TimedOutException($this, TimedOutException::TYPE_GENERAL);
         }
 
-        if (null !== $this->idleTimeout && $this->idleTimeout < microtime(true) - $this->lastOutputTime) {
+        if (null !== $this->lastOutputTime && null !== $this->idleTimeout && $this->idleTimeout < microtime(true) - $this->lastOutputTime) {
             throw new TimedOutException($this, TimedOutException::TYPE_IDLE);
         }
 
