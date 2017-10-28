@@ -82,5 +82,41 @@ class ClientTest extends TestCase
         $this->assertTrue($client->setForwardAgent(true)->isForwardAgent());
     }
 
+    /**
+     * @dataProvider buildData()
+     * @param array $options
+     * @param string $needle
+     * @param string $message
+     */
+    public function testBuild($options, $needle, $message)
+    {
+        $client = new Client();
+        foreach ($options as $option => $value) {
+            $client->{'set' . $option}($value);
+        }
+        $this->assertContains($needle, $client->__toString(), $message);
+    }
+
+    /**
+     * @return array
+     */
+    public function buildData()
+    {
+        $file = __FILE__;
+        return [
+            [[], 'ssh -tt -o StrictHostKeyChecking=no -p 22 127.0.0.1', '#1, default'],
+            [
+                [
+                    'hostName' => 'example.com',
+                    'user' => 'bashkarev',
+                    'port' => 777,
+                    'identityFile' => $file,
+                    'defaultArguments' => '-o UserKnownHostsFile=/dev/null',
+                    'forwardAgent' => true
+                ], "ssh -tt -o UserKnownHostsFile=/dev/null -i {$file} -A -p 777 bashkarev@example.com", '#2, all'],
+            [['defaultArguments' => null], 'ssh -tt -p 22 127.0.0.1', '#3, null default arguments'],
+        ];
+    }
+
 
 }

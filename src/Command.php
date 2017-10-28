@@ -7,6 +7,9 @@
 
 namespace Bashkarev\Ssh;
 
+use Bashkarev\Ssh\Exception\InvalidArgumentException;
+use Bashkarev\Ssh\Exception\TimedOutException;
+
 /**
  * @author Dmitry Bashkarev <dmitry@bashkarev.com>
  */
@@ -17,9 +20,9 @@ class Command
      */
     private $pipes;
     /**
-     * @var int
+     * @var string
      */
-    private $exitCode;
+    private $commandLine;
     /**
      * @var float|null
      */
@@ -28,6 +31,10 @@ class Command
      * @var float|null
      */
     private $idleTimeout;
+    /**
+     * @var int
+     */
+    private $exitCode;
     /**
      * @var float
      */
@@ -39,19 +46,44 @@ class Command
 
     /**
      * Command constructor.
-     * @param string $command
+     * @param string $commandLine
      * @param Pipes $pipes
-     * @param int|null $timeout
-     * @param int|null $idleTimeout
+     * @param int|float|null $timeout
+     * @param int|float|null $idleTimeout
      */
-    public function __construct($command, Pipes $pipes, $timeout = 60, $idleTimeout = null)
+    public function __construct($commandLine, Pipes $pipes, $timeout = 60, $idleTimeout = null)
     {
+        $this->commandLine = $commandLine;
         $this->startTime = microtime(true);
         $this->pipes = $pipes;
-        $this->timeout = $timeout;
-        $this->idleTimeout = $idleTimeout;
+        $this->timeout = $this->validateTimeout($timeout);
+        $this->idleTimeout = $this->validateTimeout($idleTimeout);
 
-        $this->pipes->write(rtrim($command) . ';echo -ne "[return_code:$?]"' . PHP_EOL);
+        $this->pipes->write(rtrim($commandLine) . ';echo -ne "[return_code:$?]"' . PHP_EOL);
+    }
+
+    /**
+     * @return string
+     */
+    public function getCommandLine()
+    {
+        return $this->commandLine;
+    }
+
+    /**
+     * @return float|null
+     */
+    public function getTimeout()
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * @return float|null
+     */
+    public function getIdleTimeout()
+    {
+        return $this->idleTimeout;
     }
 
     /**
@@ -66,7 +98,11 @@ class Command
         while (true) {
             $r = $read;
             if (false === @stream_select($r, $write, $except, 0, $this->calcTvMicrosecond())) {
-                throw new \Exception('Connection failed'); // todo last error && check
+                $message = 'Failed stream select.';
+                if ($error = error_get_last()) {
+                    $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
+                }
+                throw new \Exception($message);
             }
 
             foreach ($r as $pipe) {
@@ -116,11 +152,11 @@ class Command
     public function checkTimeout()
     {
         if (null !== $this->timeout && $this->timeout < microtime(true) - $this->startTime) {
-            throw new \RuntimeException('timeout');//todo ProcessTimedOutException
+            throw new TimedOutException($this, TimedOutException::TYPE_GENERAL);
         }
 
         if (null !== $this->idleTimeout && $this->idleTimeout < microtime(true) - $this->lastOutputTime) {
-            throw new \RuntimeException('timeout');//todo ProcessTimedOutException
+            throw new TimedOutException($this, TimedOutException::TYPE_IDLE);
         }
 
     }
@@ -146,4 +182,26 @@ class Command
         return ($timer < 0) ? 0 : $timer;
     }
 
+    /**
+     * Validates and returns the filtered timeout.
+     *
+     * @param int|float|null $timeout
+     * @return float|null
+     * @throws InvalidArgumentException if the given timeout is a negative number
+     */
+    private function validateTimeout($timeout)
+    {
+        if (null === $timeout) {
+            return null;
+        }
+
+        $timeout = (float)$timeout;
+        if (0.0 === $timeout) {
+            $timeout = null;
+        } elseif ($timeout < 0) {
+            throw new InvalidArgumentException('The timeout value must be a valid positive integer or float number.');
+        }
+
+        return $timeout;
+    }
 }

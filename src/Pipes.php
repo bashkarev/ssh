@@ -26,16 +26,22 @@ class Pipes
 
     /**
      * @param string $ssh
+     * @throws \Exception
      */
     public function open($ssh)
     {
-        if (!is_resource($this->process)) {
+        if (is_resource($this->process)) {
             return;
         }
+
         $descriptor = [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']];
         $this->process = proc_open($ssh, $descriptor, $this->pipes);
-        if (!is_resource($this->process)) {
-            throw new \RuntimeException('connection error'); //toDo last error
+        if (false === $this->process) {
+            $message = sprintf('Failed to execute the command: "%s".', $ssh);
+            if ($error = error_get_last()) {
+                $message .= sprintf(' Errno: %d; %s', $error['type'], $error['message']);
+            }
+            throw new \Exception($message);
         }
 
         stream_set_blocking($this->pipes[1], false);
