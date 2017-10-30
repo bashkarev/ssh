@@ -15,6 +15,9 @@ use Bashkarev\Ssh\Exception\TimedOutException;
  */
 class Command
 {
+    const ERR = 'err';
+    const OUT = 'out';
+
     /**
      * @var Pipes
      */

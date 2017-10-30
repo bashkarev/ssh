@@ -12,9 +12,6 @@ namespace Bashkarev\Ssh;
  */
 class Pipes
 {
-    const ERR = 'err';
-    const OUT = 'out';
-
     /**
      * @var resource
      */
@@ -63,8 +60,8 @@ class Pipes
     public function getRead()
     {
         return [
-            self::OUT => $this->pipes[1],
-            self::ERR => $this->pipes[2],
+            Command::OUT => $this->pipes[1],
+            Command::ERR => $this->pipes[2],
         ];
     }
 
